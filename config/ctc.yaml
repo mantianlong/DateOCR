@@ -1,0 +1,73 @@
+Global:
+  algorithm: attention_0228
+  random_seed: 1111
+  program: ocr.program.ctc_program,Program
+  use_gpu: true
+  epoch_num: 100
+  print_batch_step: 10
+  save_model_dir: output
+  grad_clip: 5
+  finetune_weights: /Users/mantianlong/Desktop/OCR/DateOCR/output/attention_0223/checkpoints/model_best_loss.pth
+#  finetune_weights:
+  resume_weights:
+
+Dataloader:
+  function: ocr.data.dataloader,lmdb_dataloader
+  label_converter: ocr.utils.utility,CTCLabelConverter
+  image_shape: [ 3, 32, 100 ]
+  mean: [ 0.5, 0.5, 0.5 ]
+  std: [ 0.5, 0.5, 0.5 ]
+  max_text_length: 25
+  alignment: resize
+  character_type: en
+  character_dict_path: data/dict/dict.txt
+  train_dataloader:
+    num_workers: 0
+    batch_size_per_card: 64
+    lmdb_data_path: data/lmdb/train
+    augmentation: True
+  valid_dataloader:
+    num_workers: 0
+    batch_size_per_card: 20
+    lmdb_data_path: data/lmdb/valid
+    augmentation: False
+
+Architecture:
+  function: ocr.modelling.architectures.ctc_rec_model,RecModel
+
+UNet:
+  function: ocr.modelling.preprocess.unet,UNet
+
+TPS:
+  function: ocr.modelling.preprocess.tps,TPS_SpatialTransformerNetwork
+  F: 20
+
+Encoder:
+  function: ocr.modelling.backbone.resnet,ResNet
+  output_channel: 512
+
+Decoder:
+  function: ocr.modelling.backbone.bilstm,BiLSTM
+  hidden_size: 256
+  output_channel: 256
+
+#Head:
+#  function: ocr.modelling.head.attention,Attention
+#  hidden_size: 512
+
+Head:
+  function: ocr.modelling.head.linear,CTCLinear
+
+Loss:
+  function:
+
+Optimizer:
+  function: ocr.optimizer.optimizer,Adam
+  lr: 0.001
+  beta1: 0.9
+  beta2: 0.999
+
+Scheduler:
+  function: ocr.optimizer.scheduler,StepLR
+  step_size: 30
+  gamma: 0.1
